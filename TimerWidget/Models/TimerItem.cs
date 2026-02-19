@@ -104,6 +104,16 @@ namespace TimerWidget.Models
             _timer.Start();
         }
 
+        public void Reset()
+        {
+            _timer.Stop();
+            RemainingSeconds = TotalSeconds;
+            IsExpired = false;
+            IsRunning = true;
+            OnPropertyChanged(nameof(RemainingMinutesDisplay));
+            _timer.Start();
+        }
+
         public void Stop()
         {
             _timer.Stop();

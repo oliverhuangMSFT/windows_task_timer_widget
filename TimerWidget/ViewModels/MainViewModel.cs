@@ -50,6 +50,7 @@ namespace TimerWidget.ViewModels
         public ICommand PauseResumeCommand => new RelayCommand(o => PauseResume((TimerItem)o!));
         public ICommand RemoveTimerCommand => new RelayCommand(o => RemoveTimer((TimerItem)o!));
         public ICommand ExtendTimerCommand => new RelayCommand(o => ExtendTimer((TimerItem)o!));
+        public ICommand ResetTimerCommand => new RelayCommand(o => ResetTimer((TimerItem)o!));
 
         private void AddTimer()
         {
@@ -93,6 +94,12 @@ namespace TimerWidget.ViewModels
             timer.Stop();
             timer.Expired -= OnSingleTimerExpired;
             Timers.Remove(timer);
+            CheckExpiredTimers();
+        }
+
+        private void ResetTimer(TimerItem timer)
+        {
+            timer.Reset();
             CheckExpiredTimers();
         }
 

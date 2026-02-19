@@ -156,8 +156,13 @@
                                 <DockPanel Margin="8,5">
                                     <!-- Right-side buttons -->
                                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="6,0,0,0">
+                                        <Button Content="↺" Style="{StaticResource SmallBtn}"
+                                                ToolTip="Reset timer"
+                                                Command="{Binding DataContext.ResetTimerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Visibility="{Binding IsExpired, Converter={StaticResource NotExpiredVisConv}}"/>
                                         <Button Content="{Binding IsRunning, Converter={StaticResource PlayPauseConv}}"
-                                                Style="{StaticResource SmallBtn}"
+                                                Style="{StaticResource SmallBtn}" Margin="4,0,0,0"
                                                 Command="{Binding DataContext.PauseResumeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}"
                                                 Visibility="{Binding IsExpired, Converter={StaticResource NotExpiredVisConv}}"/>
