@@ -96,10 +96,11 @@ namespace TimerWidget.Models
         public void Extend(int minutes)
         {
             _timer.Stop();
-            RemainingSeconds += minutes * 60;
-            TotalSeconds += minutes * 60;
+            RemainingSeconds = minutes * 60;
+            TotalSeconds = minutes * 60;
             IsExpired = false;
             IsRunning = true;
+            OnPropertyChanged(nameof(Progress));
             OnPropertyChanged(nameof(RemainingMinutesDisplay));
             _timer.Start();
         }
