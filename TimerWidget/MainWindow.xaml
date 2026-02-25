@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:TimerWidget"
         xmlns:conv="clr-namespace:TimerWidget.Converters"
         mc:Ignorable="d"
-        Title="Timer Widget"
+        Title="Task Timer"
+        Icon="app.ico"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -21,6 +22,7 @@
         <conv:InverseBoolConverter x:Key="InverseBoolConv"/>
         <conv:BoolToVisibilityInverseConverter x:Key="NotExpiredVisConv"/>
         <conv:BoolToVisibilityConverter x:Key="ExpiredVisConv"/>
+        <conv:BoolToEditIconConverter x:Key="EditIconConv"/>
 
         <!-- Dark button style -->
         <Style x:Key="DarkBtn" TargetType="Button">
@@ -80,7 +82,8 @@
     </Window.Resources>
 
     <Border x:Name="AlertBorder" CornerRadius="8" BorderThickness="3"
-            BorderBrush="#2D2D2D" Background="#1E1E1E">
+            BorderBrush="#2D2D2D" Background="#1E1E1E"
+            MouseWheel="Widget_MouseWheel">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -92,7 +95,7 @@
             <Border Grid.Row="0" Background="#2D2D2D" CornerRadius="6,6,0,0"
                     MouseLeftButtonDown="Header_MouseLeftButtonDown" Cursor="SizeAll">
                 <DockPanel Margin="10,6">
-                    <TextBlock Text="⏱ Timer Widget" Foreground="#E0E0E0"
+                    <TextBlock Text="⏱ Task Timer" Foreground="#E0E0E0"
                                FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                         <Button Content="—" Style="{StaticResource SmallBtn}" Click="Minimize_Click"
@@ -107,11 +110,17 @@
             <ItemsControl Grid.Row="1" ItemsSource="{Binding Timers}" Margin="0,2,0,2">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="4,2" CornerRadius="4" ClipToBounds="True">
+                        <Border Margin="4,2" CornerRadius="4" ClipToBounds="True"
+                                MouseWheel="TimerRow_MouseWheel">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Background" Value="#2A2A2A"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
                                     <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#0078D4"/>
+                                        </DataTrigger>
                                         <DataTrigger Binding="{Binding IsExpired}" Value="True">
                                             <DataTrigger.EnterActions>
                                                 <BeginStoryboard x:Name="RowFlash">
@@ -156,20 +165,15 @@
                                 <DockPanel Margin="8,5">
                                     <!-- Right-side buttons -->
                                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="6,0,0,0">
-                                        <Button Content="↺" Style="{StaticResource SmallBtn}"
-                                                ToolTip="Reset timer"
-                                                Command="{Binding DataContext.ResetTimerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Visibility="{Binding IsExpired, Converter={StaticResource NotExpiredVisConv}}"/>
+                                        <Button Content="{Binding IsEditing, Converter={StaticResource EditIconConv}}"
+                                                Style="{StaticResource SmallBtn}" ToolTip="Toggle time edit (scroll to adjust)"
+                                                Command="{Binding DataContext.ToggleEditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"/>
                                         <Button Content="{Binding IsRunning, Converter={StaticResource PlayPauseConv}}"
                                                 Style="{StaticResource SmallBtn}" Margin="4,0,0,0"
                                                 Command="{Binding DataContext.PauseResumeCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}"
                                                 Visibility="{Binding IsExpired, Converter={StaticResource NotExpiredVisConv}}"/>
-                                        <Button Content="+15" Style="{StaticResource SmallBtn}"
-                                                Command="{Binding DataContext.ExtendTimerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Visibility="{Binding IsExpired, Converter={StaticResource ExpiredVisConv}}"/>
                                         <Button Content="✕" Style="{StaticResource SmallBtn}" Margin="4,0,0,0"
                                                 Command="{Binding DataContext.RemoveTimerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}"/>
@@ -189,36 +193,24 @@
 
             <!-- Input Area (bottom) -->
             <Border Grid.Row="2" Background="#252525" Padding="10,8" CornerRadius="0,0,6,6">
-                <StackPanel>
-                    <DockPanel>
-                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="6,0,0,0">
-                            <Button Content="−15" Style="{StaticResource SmallBtn}" Click="Decrement_Click"/>
-                            <Button Content="+15" Style="{StaticResource SmallBtn}" Click="Increment_Click"
-                                    Margin="4,0,0,0"/>
-                        </StackPanel>
-                        <TextBox x:Name="TitleInput" Background="#3C3C3C" Foreground="#E0E0E0"
-                                 BorderThickness="0" Padding="6,4" FontSize="13"
-                                 Text="{Binding NewTimerTitle, UpdateSourceTrigger=PropertyChanged}"
-                                 VerticalContentAlignment="Center"
-                                 KeyDown="TitleInput_KeyDown">
-                            <TextBox.Style>
-                                <Style TargetType="TextBox">
-                                    <Setter Property="Tag" Value="Title..."/>
-                                </Style>
-                            </TextBox.Style>
-                        </TextBox>
-                    </DockPanel>
-                    <DockPanel Margin="0,6,0,0">
-                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Button Content="10sec" Style="{StaticResource SmallBtn}" Click="Dev10Sec_Click"
-                                    Margin="0,0,4,0" Foreground="#FF9900" ToolTip="Dev: 10 second timer"/>
-                            <Button Content="Start" Style="{StaticResource AccentBtn}"
-                                    Command="{Binding AddTimerCommand}" Padding="14,4"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding NewTimerMinutesDisplay}" Foreground="#AAAAAA"
-                                   FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                    </DockPanel>
-                </StackPanel>
+                <DockPanel>
+                    <Button Content="Start" Style="{StaticResource AccentBtn}" DockPanel.Dock="Right"
+                            Command="{Binding AddTimerCommand}" Padding="14,4" Margin="6,0,0,0"/>
+                    <TextBlock Text="{Binding NewTimerDurationDisplay}" Foreground="#AAAAAA"
+                               FontSize="13" VerticalAlignment="Center" DockPanel.Dock="Right"
+                               Margin="6,0,0,0" MinWidth="40"/>
+                    <TextBox x:Name="TitleInput" Background="#3C3C3C" Foreground="#E0E0E0"
+                             BorderThickness="0" Padding="6,4" FontSize="13"
+                             Text="{Binding NewTimerTitle, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalContentAlignment="Center"
+                             KeyDown="TitleInput_KeyDown">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox">
+                                <Setter Property="Tag" Value="Title..."/>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </DockPanel>
             </Border>
         </Grid>
     </Border>

@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using TimerWidget.Helpers;
+using TimerWidget.Models;
 using TimerWidget.ViewModels;
 
 namespace TimerWidget;
@@ -13,6 +14,8 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
     private Storyboard? _flashStoryboard;
     private IntPtr _hwnd;
+    private int _scrollAccumulator;
+    private const int ScrollThreshold = 60;
 
     public MainWindow()
     {
@@ -71,9 +74,40 @@ public partial class MainWindow : Window
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void Increment_Click(object sender, RoutedEventArgs e) => _vm.IncrementCommand.Execute(null);
-    private void Decrement_Click(object sender, RoutedEventArgs e) => _vm.DecrementCommand.Execute(null);
-    private void Dev10Sec_Click(object sender, RoutedEventArgs e) => _vm.AddDevTimer10Sec();
+    private void Widget_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _scrollAccumulator += e.Delta;
+        while (_scrollAccumulator >= ScrollThreshold)
+        {
+            _vm.IncrementCommand.Execute(null);
+            _scrollAccumulator -= ScrollThreshold;
+        }
+        while (_scrollAccumulator <= -ScrollThreshold)
+        {
+            _vm.DecrementCommand.Execute(null);
+            _scrollAccumulator += ScrollThreshold;
+        }
+        e.Handled = true;
+    }
+
+    private void TimerRow_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is TimerItem timer && timer.IsEditing)
+        {
+            _scrollAccumulator += e.Delta;
+            while (_scrollAccumulator >= ScrollThreshold)
+            {
+                _vm.AddTimeToTimer(timer);
+                _scrollAccumulator -= ScrollThreshold;
+            }
+            while (_scrollAccumulator <= -ScrollThreshold)
+            {
+                _vm.SubtractTimeFromTimer(timer);
+                _scrollAccumulator += ScrollThreshold;
+            }
+            e.Handled = true;
+        }
+    }
 
     private void TitleInput_KeyDown(object sender, KeyEventArgs e)
     {

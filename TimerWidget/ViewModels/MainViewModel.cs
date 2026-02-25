@@ -10,7 +10,7 @@ namespace TimerWidget.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         private string _newTimerTitle = string.Empty;
-        private int _newTimerMinutes = 15;
+        private int _newTimerSeconds = 900;
         private bool _hasExpiredTimers;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -25,18 +25,29 @@ namespace TimerWidget.ViewModels
             set { _newTimerTitle = value; OnPropertyChanged(); }
         }
 
-        public int NewTimerMinutes
+        public int NewTimerSeconds
         {
-            get => _newTimerMinutes;
+            get => _newTimerSeconds;
             set
             {
-                _newTimerMinutes = Math.Max(15, value);
+                _newTimerSeconds = Math.Max(10, value);
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(NewTimerMinutesDisplay));
+                OnPropertyChanged(nameof(NewTimerDurationDisplay));
             }
         }
 
-        public string NewTimerMinutesDisplay => $"{_newTimerMinutes} min";
+        public string NewTimerDurationDisplay
+        {
+            get
+            {
+                if (_newTimerSeconds < 60) return $"{_newTimerSeconds} sec";
+                int minutes = _newTimerSeconds / 60;
+                if (minutes < 60) return $"{minutes} min";
+                int hrs = minutes / 60;
+                int rem = minutes % 60;
+                return rem == 0 ? $"{hrs} hr" : $"{hrs} hr {rem} min";
+            }
+        }
 
         public bool HasExpiredTimers
         {
@@ -45,42 +56,48 @@ namespace TimerWidget.ViewModels
         }
 
         public ICommand AddTimerCommand => new RelayCommand(_ => AddTimer(), _ => !string.IsNullOrWhiteSpace(NewTimerTitle));
-        public ICommand IncrementCommand => new RelayCommand(_ => NewTimerMinutes += 15);
-        public ICommand DecrementCommand => new RelayCommand(_ => NewTimerMinutes -= 15);
+        public ICommand IncrementCommand => new RelayCommand(_ => NewTimerSeconds = GetNextDuration(NewTimerSeconds));
+        public ICommand DecrementCommand => new RelayCommand(_ => NewTimerSeconds = GetPrevDuration(NewTimerSeconds));
         public ICommand PauseResumeCommand => new RelayCommand(o => PauseResume((TimerItem)o!));
         public ICommand RemoveTimerCommand => new RelayCommand(o => RemoveTimer((TimerItem)o!));
-        public ICommand ExtendTimerCommand => new RelayCommand(o => ExtendTimer((TimerItem)o!));
-        public ICommand ResetTimerCommand => new RelayCommand(o => ResetTimer((TimerItem)o!));
+        public ICommand ToggleEditCommand => new RelayCommand(o => ((TimerItem)o!).IsEditing = !((TimerItem)o!).IsEditing);
+
+        internal static int GetNextDuration(int currentSeconds)
+        {
+            if (currentSeconds < 10) return 10;
+            if (currentSeconds < 30) return 30;
+            if (currentSeconds < 60) return 60;
+            if (currentSeconds < 300) return currentSeconds + 60;
+            if (currentSeconds < 900) return currentSeconds + 300;
+            if (currentSeconds < 7200) return currentSeconds + 900;
+            return currentSeconds + 1800;
+        }
+
+        internal static int GetPrevDuration(int currentSeconds)
+        {
+            if (currentSeconds <= 10) return 10;
+            if (currentSeconds <= 30) return 10;
+            if (currentSeconds <= 60) return 30;
+            if (currentSeconds <= 300) return currentSeconds - 60;
+            if (currentSeconds <= 900) return currentSeconds - 300;
+            if (currentSeconds <= 7200) return currentSeconds - 900;
+            return currentSeconds - 1800;
+        }
 
         private void AddTimer()
         {
             var timer = new TimerItem
             {
                 Title = NewTimerTitle.Trim(),
-                TotalSeconds = _newTimerMinutes * 60,
-                RemainingSeconds = _newTimerMinutes * 60
+                TotalSeconds = _newTimerSeconds,
+                RemainingSeconds = _newTimerSeconds
             };
             timer.Expired += OnSingleTimerExpired;
             Timers.Add(timer);
             timer.Start();
 
             NewTimerTitle = string.Empty;
-            NewTimerMinutes = 15;
-        }
-
-        public void AddDevTimer10Sec()
-        {
-            var title = string.IsNullOrWhiteSpace(NewTimerTitle) ? "Dev Test" : NewTimerTitle.Trim();
-            var timer = new TimerItem
-            {
-                Title = title,
-                TotalSeconds = 10,
-                RemainingSeconds = 10
-            };
-            timer.Expired += OnSingleTimerExpired;
-            Timers.Add(timer);
-            timer.Start();
-            NewTimerTitle = string.Empty;
+            NewTimerSeconds = 900;
         }
 
         private void PauseResume(TimerItem timer)
@@ -97,16 +114,24 @@ namespace TimerWidget.ViewModels
             CheckExpiredTimers();
         }
 
-        private void ResetTimer(TimerItem timer)
+        internal static int GetStepSize(int currentSeconds)
         {
-            timer.Reset();
+            if (currentSeconds < 60) return 10;
+            if (currentSeconds < 300) return 60;
+            if (currentSeconds < 900) return 300;
+            if (currentSeconds < 7200) return 900;
+            return 1800;
+        }
+
+        public void AddTimeToTimer(TimerItem timer)
+        {
+            timer.AddTime(GetStepSize(timer.RemainingSeconds));
             CheckExpiredTimers();
         }
 
-        private void ExtendTimer(TimerItem timer)
+        public void SubtractTimeFromTimer(TimerItem timer)
         {
-            timer.Extend(15);
-            CheckExpiredTimers();
+            timer.SubtractTime(GetStepSize(timer.RemainingSeconds));
         }
 
         private void OnSingleTimerExpired(object? sender, EventArgs e)

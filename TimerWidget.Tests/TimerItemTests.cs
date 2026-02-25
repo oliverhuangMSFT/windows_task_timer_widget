@@ -240,7 +240,7 @@ public class TimerItemTests
         var timer = CreateTimer(600);
         timer.IsExpired = true;
 
-        Assert.Equal("0 min", timer.RemainingMinutesDisplay);
+        Assert.Equal("0 sec", timer.RemainingMinutesDisplay);
     }
 
     [Fact]
@@ -270,5 +270,69 @@ public class TimerItemTests
         Assert.Contains(nameof(TimerItem.RemainingSeconds), props);
         Assert.Contains(nameof(TimerItem.RemainingMinutesDisplay), props);
         Assert.Contains(nameof(TimerItem.Progress), props);
+    }
+
+    [Fact]
+    public void AddTime_IncreasesRunningTimer()
+    {
+        var timer = CreateTimer(600);
+        timer.Start();
+        timer.RemainingSeconds = 300;
+
+        timer.AddTime(60);
+
+        Assert.Equal(360, timer.RemainingSeconds);
+        Assert.Equal(360, timer.TotalSeconds);
+    }
+
+    [Fact]
+    public void AddTime_RestartsExpiredTimer()
+    {
+        var timer = CreateTimer(600);
+        timer.RemainingSeconds = 0;
+        timer.IsExpired = true;
+
+        timer.AddTime(10);
+
+        Assert.Equal(10, timer.RemainingSeconds);
+        Assert.Equal(10, timer.TotalSeconds);
+        Assert.False(timer.IsExpired);
+        Assert.True(timer.IsRunning);
+    }
+
+    [Fact]
+    public void SubtractTime_DecreasesRemaining()
+    {
+        var timer = CreateTimer(600);
+        timer.Start();
+        timer.RemainingSeconds = 300;
+
+        timer.SubtractTime(60);
+
+        Assert.Equal(240, timer.RemainingSeconds);
+    }
+
+    [Fact]
+    public void SubtractTime_DoesNotGoBelowZero()
+    {
+        var timer = CreateTimer(600);
+        timer.Start();
+        timer.RemainingSeconds = 5;
+
+        timer.SubtractTime(10);
+
+        Assert.Equal(5, timer.RemainingSeconds);
+    }
+
+    [Fact]
+    public void SubtractTime_IgnoresExpiredTimer()
+    {
+        var timer = CreateTimer(600);
+        timer.RemainingSeconds = 0;
+        timer.IsExpired = true;
+
+        timer.SubtractTime(60);
+
+        Assert.Equal(0, timer.RemainingSeconds);
     }
 }

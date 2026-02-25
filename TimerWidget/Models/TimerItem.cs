@@ -12,6 +12,7 @@ namespace TimerWidget.Models
         private int _totalSeconds;
         private bool _isRunning;
         private bool _isExpired;
+        private bool _isEditing;
         private readonly DispatcherTimer _timer;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -59,6 +60,12 @@ namespace TimerWidget.Models
             set { _isExpired = value; OnPropertyChanged(); }
         }
 
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set { _isEditing = value; OnPropertyChanged(); }
+        }
+
         /// <summary>Fraction of time remaining (1.0 = full, 0.0 = done)</summary>
         public double Progress => _totalSeconds > 0 ? (double)_remainingSeconds / _totalSeconds : 0;
 
@@ -66,9 +73,13 @@ namespace TimerWidget.Models
         {
             get
             {
-                if (IsExpired) return "0 min";
+                if (IsExpired) return "0 sec";
+                if (_remainingSeconds < 60) return $"{_remainingSeconds} sec";
                 int minutes = (int)Math.Ceiling(_remainingSeconds / 60.0);
-                return $"{minutes} min";
+                if (minutes < 60) return $"{minutes} min";
+                int hrs = minutes / 60;
+                int rem = minutes % 60;
+                return rem == 0 ? $"{hrs} hr" : $"{hrs} hr {rem} min";
             }
         }
 
@@ -113,6 +124,34 @@ namespace TimerWidget.Models
             IsRunning = true;
             OnPropertyChanged(nameof(RemainingMinutesDisplay));
             _timer.Start();
+        }
+
+        public void AddTime(int seconds)
+        {
+            if (IsExpired)
+            {
+                _timer.Stop();
+                RemainingSeconds = seconds;
+                TotalSeconds = seconds;
+                IsExpired = false;
+                IsRunning = true;
+                OnPropertyChanged(nameof(Progress));
+                OnPropertyChanged(nameof(RemainingMinutesDisplay));
+                _timer.Start();
+            }
+            else
+            {
+                RemainingSeconds += seconds;
+                TotalSeconds = RemainingSeconds;
+            }
+        }
+
+        public void SubtractTime(int seconds)
+        {
+            if (IsExpired) return;
+            if (RemainingSeconds - seconds <= 0) return;
+            RemainingSeconds -= seconds;
+            TotalSeconds = RemainingSeconds;
         }
 
         public void Stop()
