@@ -15,7 +15,7 @@ public partial class MainWindow : Window
     private Storyboard? _flashStoryboard;
     private IntPtr _hwnd;
     private int _scrollAccumulator;
-    private const int ScrollThreshold = 60;
+    private const int ScrollThreshold = 120;
 
     public MainWindow()
     {

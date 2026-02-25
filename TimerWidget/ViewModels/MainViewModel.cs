@@ -69,7 +69,7 @@ namespace TimerWidget.ViewModels
             if (currentSeconds < 60) return 60;
             if (currentSeconds < 300) return currentSeconds + 60;
             if (currentSeconds < 900) return currentSeconds + 300;
-            if (currentSeconds < 7200) return currentSeconds + 900;
+            if (currentSeconds < 10800) return currentSeconds + 900;
             return currentSeconds + 1800;
         }
 
@@ -80,7 +80,7 @@ namespace TimerWidget.ViewModels
             if (currentSeconds <= 60) return 30;
             if (currentSeconds <= 300) return currentSeconds - 60;
             if (currentSeconds <= 900) return currentSeconds - 300;
-            if (currentSeconds <= 7200) return currentSeconds - 900;
+            if (currentSeconds <= 10800) return currentSeconds - 900;
             return currentSeconds - 1800;
         }
 

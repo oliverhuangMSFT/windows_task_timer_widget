@@ -104,7 +104,7 @@ public class MainViewModelTests
 
         vm.IncrementCommand.Execute(null);
 
-        Assert.Equal(1800, vm.NewTimerSeconds); // 30 min (+15 min step)
+        Assert.Equal(1800, vm.NewTimerSeconds); // 30 min
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class MainViewModelTests
     [InlineData(600, 900)]
     [InlineData(900, 1800)]
     [InlineData(6300, 7200)]
-    [InlineData(7200, 9000)]
+    [InlineData(7200, 8100)]
     public void GetNextDuration_StepsCorrectly(int current, int expected)
     {
         Assert.Equal(expected, MainViewModel.GetNextDuration(current));
@@ -153,7 +153,7 @@ public class MainViewModelTests
     [InlineData(600, 300)]
     [InlineData(900, 600)]
     [InlineData(7200, 6300)]
-    [InlineData(9000, 7200)]
+    [InlineData(9000, 8100)]
     public void GetPrevDuration_StepsCorrectly(int current, int expected)
     {
         Assert.Equal(expected, MainViewModel.GetPrevDuration(current));

@@ -14,6 +14,8 @@ namespace TimerWidget.Models
         private bool _isExpired;
         private bool _isEditing;
         private readonly DispatcherTimer _timer;
+        private DateTime _startedAtUtc;
+        private int _secondsAtStart;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? Expired;
@@ -88,6 +90,8 @@ namespace TimerWidget.Models
             if (_remainingSeconds <= 0) return;
             IsRunning = true;
             IsExpired = false;
+            _secondsAtStart = _remainingSeconds;
+            _startedAtUtc = DateTime.UtcNow;
             _timer.Start();
         }
 
@@ -101,6 +105,8 @@ namespace TimerWidget.Models
         {
             if (_remainingSeconds <= 0 || IsExpired) return;
             IsRunning = true;
+            _secondsAtStart = _remainingSeconds;
+            _startedAtUtc = DateTime.UtcNow;
             _timer.Start();
         }
 
@@ -111,6 +117,8 @@ namespace TimerWidget.Models
             TotalSeconds = minutes * 60;
             IsExpired = false;
             IsRunning = true;
+            _secondsAtStart = RemainingSeconds;
+            _startedAtUtc = DateTime.UtcNow;
             OnPropertyChanged(nameof(Progress));
             OnPropertyChanged(nameof(RemainingMinutesDisplay));
             _timer.Start();
@@ -122,6 +130,8 @@ namespace TimerWidget.Models
             RemainingSeconds = TotalSeconds;
             IsExpired = false;
             IsRunning = true;
+            _secondsAtStart = RemainingSeconds;
+            _startedAtUtc = DateTime.UtcNow;
             OnPropertyChanged(nameof(RemainingMinutesDisplay));
             _timer.Start();
         }
@@ -135,6 +145,8 @@ namespace TimerWidget.Models
                 TotalSeconds = seconds;
                 IsExpired = false;
                 IsRunning = true;
+                _secondsAtStart = RemainingSeconds;
+                _startedAtUtc = DateTime.UtcNow;
                 OnPropertyChanged(nameof(Progress));
                 OnPropertyChanged(nameof(RemainingMinutesDisplay));
                 _timer.Start();
@@ -143,6 +155,11 @@ namespace TimerWidget.Models
             {
                 RemainingSeconds += seconds;
                 TotalSeconds = RemainingSeconds;
+                if (IsRunning)
+                {
+                    _secondsAtStart = RemainingSeconds;
+                    _startedAtUtc = DateTime.UtcNow;
+                }
             }
         }
 
@@ -162,8 +179,9 @@ namespace TimerWidget.Models
 
         private void Timer_Tick(object? sender, EventArgs e)
         {
-            RemainingSeconds--;
-            if (RemainingSeconds <= 0)
+            int elapsed = (int)(DateTime.UtcNow - _startedAtUtc).TotalSeconds;
+            int newRemaining = _secondsAtStart - elapsed;
+            if (newRemaining <= 0)
             {
                 RemainingSeconds = 0;
                 _timer.Stop();
@@ -171,6 +189,10 @@ namespace TimerWidget.Models
                 IsExpired = true;
                 OnPropertyChanged(nameof(RemainingMinutesDisplay));
                 Expired?.Invoke(this, EventArgs.Empty);
+            }
+            else
+            {
+                RemainingSeconds = newRemaining;
             }
         }
 
