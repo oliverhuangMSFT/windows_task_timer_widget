@@ -125,13 +125,17 @@ namespace TimerWidget.ViewModels
 
         public void AddTimeToTimer(TimerItem timer)
         {
-            timer.AddTime(GetStepSize(timer.RemainingSeconds));
+            int next = GetNextDuration(timer.RemainingSeconds);
+            timer.AddTime(next - timer.RemainingSeconds);
             CheckExpiredTimers();
         }
 
         public void SubtractTimeFromTimer(TimerItem timer)
         {
-            timer.SubtractTime(GetStepSize(timer.RemainingSeconds));
+            int prev = GetPrevDuration(timer.RemainingSeconds);
+            int delta = timer.RemainingSeconds - prev;
+            if (delta > 0)
+                timer.SubtractTime(delta);
         }
 
         private void OnSingleTimerExpired(object? sender, EventArgs e)

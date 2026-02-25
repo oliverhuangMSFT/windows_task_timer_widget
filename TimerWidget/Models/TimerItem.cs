@@ -169,6 +169,11 @@ namespace TimerWidget.Models
             if (RemainingSeconds - seconds <= 0) return;
             RemainingSeconds -= seconds;
             TotalSeconds = RemainingSeconds;
+            if (IsRunning)
+            {
+                _secondsAtStart = RemainingSeconds;
+                _startedAtUtc = DateTime.UtcNow;
+            }
         }
 
         public void Stop()

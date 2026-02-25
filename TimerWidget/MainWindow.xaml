@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TimerWidget"
         xmlns:conv="clr-namespace:TimerWidget.Converters"
+        xmlns:helpers="clr-namespace:TimerWidget.Helpers"
         mc:Ignorable="d"
         Title="Task Timer"
         Icon="app.ico"
@@ -178,12 +179,18 @@
                                                 Command="{Binding DataContext.RemoveTimerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                                 CommandParameter="{Binding}"/>
                                     </StackPanel>
-                                    <!-- Title and time -->
-                                    <TextBlock Foreground="#E0E0E0" FontSize="13" VerticalAlignment="Center">
-                                        <Run Text="{Binding Title, Mode=OneWay}"/>
-                                        <Run Text="  " />
-                                        <Run Text="{Binding RemainingMinutesDisplay, Mode=OneWay}" Foreground="#AAAAAA"/>
-                                    </TextBlock>
+                                    <!-- Time -->
+                                    <TextBlock DockPanel.Dock="Right" Foreground="#AAAAAA" FontSize="13"
+                                               VerticalAlignment="Center" Margin="6,0,0,0"
+                                               Text="{Binding RemainingMinutesDisplay, Mode=OneWay}"/>
+                                    <!-- Title with marquee for long text -->
+                                    <Border ClipToBounds="True" VerticalAlignment="Center">
+                                        <Canvas Height="18">
+                                            <TextBlock Foreground="#E0E0E0" FontSize="13"
+                                                       Text="{Binding Title, Mode=OneWay}"
+                                                       helpers:MarqueeBehavior.IsEnabled="True"/>
+                                        </Canvas>
+                                    </Border>
                                 </DockPanel>
                             </Grid>
                         </Border>
